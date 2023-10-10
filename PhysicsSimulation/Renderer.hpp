@@ -11,6 +11,7 @@
 
 constexpr float PI = 3.14159265358979323846;
 
+template<typename Solver>
 class Renderer
 {
 private:
@@ -23,7 +24,7 @@ private:
 
     MyOpenGL::MyShader shader;
     MyOpenGL::Texture2D texture;
-    PhysicsSolver& solver;
+    Solver& solver;
     SafeSimpleThreadPool& threadPool;
     //FastThreadPool& threadPool;
 
@@ -145,7 +146,7 @@ private:
 
 public:
 
-    explicit Renderer(PhysicsSolver& solver, SafeSimpleThreadPool& threadPool, std::string textureFilePath, std::initializer_list<MyOpenGL::MyShaderInfo> shaderInfos, size_t max_elements, std::function<void(MyOpenGL::MyShader&)> externalInit = nullptr) : solver(solver), threadPool(threadPool), shader(shaderInfos), max_elements(max_elements), modelMatrices(new glm::mat4[max_elements]), modelColors(new glm::vec3[max_elements])
+    explicit Renderer(Solver& solver, SafeSimpleThreadPool& threadPool, std::string textureFilePath, std::initializer_list<MyOpenGL::MyShaderInfo> shaderInfos, size_t max_elements, std::function<void(MyOpenGL::MyShader&)> externalInit = nullptr) : solver(solver), threadPool(threadPool), shader(shaderInfos), max_elements(max_elements), modelMatrices(new glm::mat4[max_elements]), modelColors(new glm::vec3[max_elements])
     {
         texture = loadTextureFromFile(textureFilePath.c_str());
         initRenderData();

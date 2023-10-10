@@ -50,6 +50,7 @@ void run(GLFWwindow* const window, std::function<void(float)> render, std::funct
     while (!glfwWindowShouldClose(window)) {
         GLfloat deltaTime = static_cast<GLfloat>(glfwGetTime()) - lastFrame;
         render(deltaTime);
+        lastFrame = static_cast<GLfloat>(glfwGetTime());
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -105,7 +106,9 @@ int main()
 
     const glm::vec2 world_size{ WORLD_WIDTH, WORLD_HEIGHT };
     PhysicsSolver solver{ world_size, threadPool };
-    Renderer render(solver, threadPool, "./circle.png", {
+    NewPhysicsSolver newsolver{ world_size, threadPool };
+
+    Renderer render(newsolver, threadPool, "./circle.png", {
         {GL_VERTEX_SHADER, 1, "./vertex.vert"},
         {GL_FRAGMENT_SHADER, 1, "./fragment.frag"}
                     },
@@ -124,18 +127,19 @@ int main()
 
     // 如果希望不加锁的话，就需要将物理处理放在渲染帧中
     run(window, 
-        [&](float deltaTime) {
-            if (solver.objects.size() < MAX_ELEMENTS && emit.load()) {
-                for (uint32_t i = 20; i--;) {
-                    const auto id = solver.create({ 2.0f, 10.0f + 1.1f * i });
-                    solver.objects[id].last_position.x -= 0.2f;
-                    solver.objects[id].color = getColor(idx);
+        [&, solver = &newsolver](float deltaTime) {
+            static constexpr float physicsDeltaTime = 1.0f / 60.0f;
+            if (solver->objects.size() < MAX_ELEMENTS && emit.load()) {
+                for (size_t i = std::min(20ULL, MAX_ELEMENTS - solver->objects.size()); i--;) {
+                    const auto id = solver->create({ 2.0f, 10.0f + 1.1f * i });
+                    solver->objects[id].last_position.x -= 12.0f * physicsDeltaTime;
+                    //solver.objects[id].velocity.x += 0.2f / deltaTime;
+                    solver->objects[id].color = getColor(idx);
                 }
                 idx++;
             }
 
-            static constexpr float physicsDeltaTime = 1.0f / 60.0f;
-            solver.update(physicsDeltaTime);
+            solver->update(physicsDeltaTime);
             std::cout << getFPS() << "\r\n";
 
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

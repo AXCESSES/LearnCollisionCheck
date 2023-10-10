@@ -28,3 +28,42 @@ public:
         acceleration = { 0.0f, 0.0f };
     }
 };
+
+class PhysicalObject
+{
+private:
+public:
+    glm::vec2 constantAcceleration = { 0.0f, 0.0f };
+    glm::vec2 position{ 0.0f, 0.0f } /* m */, acceleration{0.0f, 0.0f}/* m/(s^2) */;
+    glm::vec2 last_position{ 0.0f, 0.0f };
+    float mass = 1.0f; // KG
+    glm::vec3 color{ 0.0f, 0.0f, 0.0f };
+    static constexpr float movementDamping = 0.04f; // /s
+
+    PhysicalObject() = default;
+    PhysicalObject(glm::vec2 initPos, float m = 1.0f, glm::vec2 initVel = { 0.0f, 0.0f }, glm::vec2 initAcce = { 0.0f, 0.0f }) : position{ initPos }, last_position(initPos), mass{ m }, constantAcceleration{ initAcce } {}
+    virtual ~PhysicalObject() {}
+
+    // 速度应当借由之前位置与当前位置以及间隔时间计算得到
+    glm::vec2 GetVelocity(float deltaTime) const {
+        return (this->position - this->last_position) / deltaTime;
+    }
+
+    void OnForce(glm::vec2 force, float deltaTime) {
+        this->acceleration += force / mass;
+        //const glm::vec2 newVel = this->velocity + this->acceleration * deltaTime;
+        //this->position += (this->velocity + newVel) * deltaTime * 0.5f;
+        //this->velocity = newVel;
+    }
+
+    void Update(float deltaTime) {
+        this->acceleration += constantAcceleration;
+        const glm::vec2 velocity = (this->position - this->last_position) / deltaTime;
+        const glm::vec2 newVel = velocity + (this->acceleration - velocity * movementDamping) * deltaTime;
+        const auto newPosition = this->position + (velocity + newVel) * deltaTime * 0.5f;
+        last_position = this->position;
+        this->position = newPosition;
+        // this->velocity = newVel;
+        this->acceleration = { 0.0f, 0.0f };
+    }
+};
